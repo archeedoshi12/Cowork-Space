@@ -69,9 +69,6 @@ export default function Login() {
               Don't have an account?{' '}
               <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 500 }}>Sign up</Link>
             </p>
-            <div className="alert alert-info mt-2" style={{ fontSize: '0.8rem' }}>
-              <strong>Demo:</strong> admin@cowork.com / admin123 &nbsp;|&nbsp; member@cowork.com / member123
-            </div>
           </div>
         </div>
       </div>
