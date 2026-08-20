@@ -29,7 +29,6 @@ export default function SpaceCard({ space }) {
           )}
         </div>
         <div className="space-card-footer">
-          <div className="price">${space.pricePerHour}<span>/hr</span></div>
           <Link to={`/spaces/${space._id}`} className="btn btn-primary btn-sm">View Details</Link>
         </div>
       </div>

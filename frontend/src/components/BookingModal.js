@@ -78,16 +78,6 @@ export default function BookingModal({ space, onClose, onSuccess }) {
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
             </div>
-            <div className="alert alert-info" style={{ marginBottom: 0 }}>
-              <strong>Price estimate:</strong> ${space.pricePerHour}/hr × {
-                (() => {
-                  const [sh, sm] = form.startTime.split(':').map(Number);
-                  const [eh, em] = form.endTime.split(':').map(Number);
-                  const hrs = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-                  return hrs > 0 ? hrs.toFixed(1) : 0;
-                })()
-              } hr(s)
-            </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>

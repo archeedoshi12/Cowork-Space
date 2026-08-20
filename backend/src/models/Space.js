@@ -6,7 +6,6 @@ const spaceSchema = new mongoose.Schema({
   capacity: { type: Number, required: true, min: 1 },
   amenities: [{ type: String, trim: true }],
   description: { type: String, trim: true },
-  pricePerHour: { type: Number, min: 0 },
   images: [{ type: String }],
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });

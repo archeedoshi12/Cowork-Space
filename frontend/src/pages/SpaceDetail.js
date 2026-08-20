@@ -46,7 +46,6 @@ export default function SpaceDetail() {
                 </div>
                 <div className="flex gap-2 mb-2" style={{ flexWrap: 'wrap' }}>
                   <span className="text-sm text-muted">👥 Capacity: <strong>{space.capacity}</strong></span>
-                  <span className="text-sm text-muted">💰 <strong>${space.pricePerHour}/hr</strong></span>
                 </div>
                 {space.description && <p style={{ color: 'var(--gray-600)', marginBottom: '1rem' }}>{space.description}</p>}
                 <div>
@@ -74,10 +73,6 @@ export default function SpaceDetail() {
             <div className="card" style={{ position: 'sticky', top: '80px' }}>
               <div className="card-body">
                 <h2 style={{ fontWeight: 600, marginBottom: '1rem' }}>Book This Space</h2>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm text-muted">Price</span>
-                  <span className="font-semibold">${space.pricePerHour}/hr</span>
-                </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-muted">Capacity</span>
                   <span className="font-semibold">{space.capacity} {space.capacity === 1 ? 'person' : 'people'}</span>

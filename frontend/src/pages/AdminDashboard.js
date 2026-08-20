@@ -9,7 +9,7 @@ const TABS = ['Bookings', 'Spaces', 'Maintenance'];
 // ─── Space Form Modal ────────────────────────────────────────────────────────
 function SpaceFormModal({ space, onClose, onSave }) {
   const [form, setForm] = useState(
-    space || { name: '', type: 'desk', capacity: 1, pricePerHour: 10, amenities: '', description: '' }
+    space || { name: '', type: 'desk', capacity: 1, amenities: '', description: '' }
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,7 +25,6 @@ function SpaceFormModal({ space, onClose, onSave }) {
           ? form.amenities.split(',').map((a) => a.trim()).filter(Boolean)
           : form.amenities,
         capacity: parseInt(form.capacity),
-        pricePerHour: parseFloat(form.pricePerHour),
       };
       if (space) {
         await spacesAPI.update(space._id, payload);
@@ -69,10 +68,6 @@ function SpaceFormModal({ space, onClose, onSave }) {
                 <label className="form-label">Capacity</label>
                 <input type="number" min={1} className="form-control" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} required />
               </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Price per Hour ($)</label>
-              <input type="number" min={0} step={0.01} className="form-control" value={form.pricePerHour} onChange={(e) => setForm({ ...form, pricePerHour: e.target.value })} required />
             </div>
             <div className="form-group">
               <label className="form-label">Amenities (comma-separated)</label>
@@ -391,7 +386,6 @@ export default function AdminDashboard() {
                           <th>Name</th>
                           <th>Type</th>
                           <th>Capacity</th>
-                          <th>Price/hr</th>
                           <th>Amenities</th>
                           <th>Status</th>
                           <th>Actions</th>
@@ -403,7 +397,6 @@ export default function AdminDashboard() {
                             <td className="font-semibold">{s.name}</td>
                             <td><span className={`badge badge-${s.type}`}>{s.type === 'meeting_room' ? 'Meeting Room' : 'Desk'}</span></td>
                             <td>{s.capacity}</td>
-                            <td>${s.pricePerHour}</td>
                             <td className="text-sm text-muted">{s.amenities?.slice(0, 3).join(', ')}{s.amenities?.length > 3 ? '...' : ''}</td>
                             <td><span className={`badge ${s.isActive ? 'badge-approved' : 'badge-cancelled'}`}>{s.isActive ? 'Active' : 'Inactive'}</span></td>
                             <td>

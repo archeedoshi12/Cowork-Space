@@ -28,14 +28,14 @@ const seed = async () => {
   });
 
   await Space.insertMany([
-    { name: 'Hot Desk A1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet'], description: 'Open hot desk in main area', pricePerHour: 5 },
-    { name: 'Hot Desk A2', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet', 'Monitor'], description: 'Open hot desk with monitor', pricePerHour: 7 },
-    { name: 'Private Desk B1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet', 'Locker'], description: 'Private desk with locker', pricePerHour: 10 },
-    { name: 'Meeting Room Alpha', type: 'meeting_room', capacity: 6, amenities: ['WiFi', 'Projector', 'Whiteboard', 'TV Screen'], description: 'Small meeting room for 6', pricePerHour: 25 },
-    { name: 'Meeting Room Beta', type: 'meeting_room', capacity: 12, amenities: ['WiFi', 'Projector', 'Whiteboard', 'Video Conferencing'], description: 'Large meeting room for 12', pricePerHour: 50 },
-    { name: 'Board Room', type: 'meeting_room', capacity: 20, amenities: ['WiFi', 'Dual Projectors', 'Whiteboard', 'Video Conferencing', 'Catering'], description: 'Executive board room', pricePerHour: 100 },
-    { name: 'Focus Pod 1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Noise Cancellation', 'Power Outlet'], description: 'Quiet focus pod', pricePerHour: 8 },
-    { name: 'Collaboration Hub', type: 'meeting_room', capacity: 8, amenities: ['WiFi', 'Whiteboard', 'Standing Desks'], description: 'Open collaboration space', pricePerHour: 30 },
+    { name: 'Hot Desk A1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet'], description: 'Open hot desk in main area' },
+    { name: 'Hot Desk A2', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet', 'Monitor'], description: 'Open hot desk with monitor' },
+    { name: 'Private Desk B1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet', 'Locker'], description: 'Private desk with locker' },
+    { name: 'Meeting Room Alpha', type: 'meeting_room', capacity: 6, amenities: ['WiFi', 'Projector', 'Whiteboard', 'TV Screen'], description: 'Small meeting room for 6' },
+    { name: 'Meeting Room Beta', type: 'meeting_room', capacity: 12, amenities: ['WiFi', 'Projector', 'Whiteboard', 'Video Conferencing'], description: 'Large meeting room for 12' },
+    { name: 'Board Room', type: 'meeting_room', capacity: 20, amenities: ['WiFi', 'Dual Projectors', 'Whiteboard', 'Video Conferencing', 'Catering'], description: 'Executive board room' },
+    { name: 'Focus Pod 1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Noise Cancellation', 'Power Outlet'], description: 'Quiet focus pod' },
+    { name: 'Collaboration Hub', type: 'meeting_room', capacity: 8, amenities: ['WiFi', 'Whiteboard', 'Standing Desks'], description: 'Open collaboration space' },
   ]);
 
   console.log('Seed complete!');
