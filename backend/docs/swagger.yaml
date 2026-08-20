@@ -1,0 +1,548 @@
+openapi: 3.0.0
+info:
+  title: CoWork Space Booking API
+  description: |
+    REST API for Co-working Space Desk & Room Booking System.
+    
+    ## Authentication
+    Use the `/api/auth/login` endpoint to get an access token, then click **Authorize** and enter `Bearer <token>`.
+    
+    ## Roles
+    - **Visitor**: Browse spaces (no auth required)
+    - **Member**: Book spaces, manage own bookings
+    - **Admin**: Manage spaces, approve/reject bookings, maintenance blocks
+    
+    ## Test Credentials (after seeding)
+    - Admin: `admin@cowork.com` / `admin123`
+    - Member: `member@cowork.com` / `member123`
+  version: 1.0.0
+  contact:
+    name: CoWork API Support
+    email: support@cowork.com
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+  - url: https://cowork-backend.onrender.com/api
+    description: Production server (Render)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [member, admin] }
+        createdAt: { type: string, format: date-time }
+
+    Space:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [desk, meeting_room] }
+        capacity: { type: integer }
+        amenities: { type: array, items: { type: string } }
+        description: { type: string }
+        pricePerHour: { type: number }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    Booking:
+      type: object
+      properties:
+        _id: { type: string }
+        space: { $ref: '#/components/schemas/Space' }
+        member: { $ref: '#/components/schemas/User' }
+        date: { type: string, example: '2025-07-15' }
+        startTime: { type: string, example: '09:00' }
+        endTime: { type: string, example: '11:00' }
+        status: { type: string, enum: [pending, approved, rejected, cancelled] }
+        notes: { type: string }
+        adminNote: { type: string }
+        isMaintenance: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    Pagination:
+      type: object
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+        pages: { type: integer }
+
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        errors: { type: array, items: { type: object } }
+
+    SuccessResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { type: object }
+
+tags:
+  - name: Auth
+    description: Authentication & token management
+  - name: Spaces
+    description: Space listing and management
+  - name: Bookings
+    description: Booking creation and management
+  - name: System
+    description: Health and status endpoints
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, example: Jane Doe }
+                email: { type: string, example: jane@example.com }
+                password: { type: string, minLength: 6, example: secret123 }
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+                      accessToken: { type: string }
+                      refreshToken: { type: string }
+        '409': { description: Email already registered }
+        '400': { description: Validation error }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and get tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: member@cowork.com }
+                password: { type: string, example: member123 }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: '#/components/schemas/User' }
+                      accessToken: { type: string }
+                      refreshToken: { type: string }
+        '401': { description: Invalid credentials }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: New tokens issued
+        '401': { description: Invalid or expired refresh token }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and revoke refresh token
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200': { description: Logged out successfully }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /spaces:
+    get:
+      tags: [Spaces]
+      summary: List all spaces (public) with search, filter, pagination
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Full-text search on name/description
+        - in: query
+          name: type
+          schema: { type: string, enum: [desk, meeting_room] }
+        - in: query
+          name: capacity
+          schema: { type: integer }
+          description: Minimum capacity
+        - in: query
+          name: date
+          schema: { type: string, example: '2025-07-15' }
+          description: Filter by availability on date
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: List of spaces with pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Space' } }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+
+    post:
+      tags: [Spaces]
+      summary: Create a new space (Admin only)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, capacity, pricePerHour]
+              properties:
+                name: { type: string, example: Hot Desk C1 }
+                type: { type: string, enum: [desk, meeting_room] }
+                capacity: { type: integer, example: 1 }
+                amenities: { type: array, items: { type: string }, example: [WiFi, Monitor] }
+                description: { type: string }
+                pricePerHour: { type: number, example: 10 }
+      responses:
+        '201': { description: Space created }
+        '403': { description: Admin access required }
+
+  /spaces/{id}:
+    get:
+      tags: [Spaces]
+      summary: Get space details (public)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Space details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404': { description: Space not found }
+
+    put:
+      tags: [Spaces]
+      summary: Update a space (Admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                type: { type: string, enum: [desk, meeting_room] }
+                capacity: { type: integer }
+                amenities: { type: array, items: { type: string } }
+                description: { type: string }
+                pricePerHour: { type: number }
+      responses:
+        '200': { description: Space updated }
+        '404': { description: Space not found }
+
+    delete:
+      tags: [Spaces]
+      summary: Deactivate a space (Admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Space deactivated }
+
+  /spaces/{id}/availability:
+    get:
+      tags: [Spaces]
+      summary: Get space availability for a date (public)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: date
+          required: true
+          schema: { type: string, example: '2025-07-15' }
+      responses:
+        '200':
+          description: List of bookings for the date
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Booking' } }
+
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Create a booking (Member/Admin)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [spaceId, date, startTime, endTime]
+              properties:
+                spaceId: { type: string }
+                date: { type: string, example: '2025-07-15' }
+                startTime: { type: string, example: '09:00' }
+                endTime: { type: string, example: '11:00' }
+                notes: { type: string }
+      responses:
+        '201': { description: Booking created (pending approval) }
+        '409': { description: Time slot conflict }
+        '400': { description: Validation error (past date, invalid times) }
+
+    get:
+      tags: [Bookings]
+      summary: Get all bookings (Admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected, cancelled] }
+        - in: query
+          name: date
+          schema: { type: string, example: '2025-07-15' }
+        - in: query
+          name: isMaintenance
+          schema: { type: boolean }
+          description: Filter maintenance blocks only
+        - in: query
+          name: spaceId
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: All bookings with pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Booking' } }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+
+  /bookings/my:
+    get:
+      tags: [Bookings]
+      summary: Get my bookings (Member)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected, cancelled] }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: Member's bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Booking' } }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+
+  /bookings/maintenance:
+    post:
+      tags: [Bookings]
+      summary: Create maintenance block (Admin only)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [spaceId, date, startTime, endTime]
+              properties:
+                spaceId: { type: string }
+                date: { type: string, example: '2025-07-20' }
+                startTime: { type: string, example: '08:00' }
+                endTime: { type: string, example: '18:00' }
+                notes: { type: string, example: 'Deep cleaning' }
+      responses:
+        '201': { description: Maintenance block created, conflicting bookings auto-rejected }
+
+  /bookings/{id}:
+    get:
+      tags: [Bookings]
+      summary: Get a single booking by ID (Member sees own, Admin sees any)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Booking' }
+        '403': { description: Access denied }
+        '404': { description: Booking not found }
+
+  /bookings/{id}/cancel:
+    patch:
+      tags: [Bookings]
+      summary: Cancel own booking (Member)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Booking cancelled }
+        '400': { description: Cannot cancel past or already cancelled booking }
+        '404': { description: Booking not found }
+
+  /bookings/{id}/approve:
+    patch:
+      tags: [Bookings]
+      summary: Approve a booking (Admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adminNote: { type: string }
+      responses:
+        '200': { description: Booking approved, overlapping bookings auto-rejected }
+        '400': { description: Booking is not pending }
+
+  /bookings/{id}/reject:
+    patch:
+      tags: [Bookings]
+      summary: Reject a booking (Admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adminNote: { type: string }
+      responses:
+        '200': { description: Booking rejected }
+        '400': { description: Booking is not pending }
+
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200': { description: API is running }
