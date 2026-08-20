@@ -6,33 +6,23 @@ A full-stack co-working space booking system where members book desks/meeting ro
 
 | Service | URL |
 |---|---|
-| Frontend | _Add your Vercel URL here_ |
-| Backend API | _Add your Render URL here_ |
-| Swagger Docs | `<backend-url>/api/docs` |
+| Frontend | https://cowork-space-steel.vercel.app |
+| Backend API | https://cowork-space.onrender.com/api |
+| Swagger Docs | https://cowork-space.onrender.com/api/docs |
+
+**Test Credentials**
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@cowork.com | admin123 |
+| Member | member@cowork.com | member123 |
 
 ---
 
 ## ✨ Features
 
-### Visitor
-- Browse all spaces (desks, meeting rooms) with capacity, type, amenities
-- Search by name/type, filter by capacity and date availability
-- View space details with hourly availability calendar
-- Pagination on space listing
-
-### Member
-- Register / Login with JWT (access token + refresh token rotation)
-- Book a space for a specific date + time slot
-- Overlap prevention — concurrency-safe booking (no double-booking)
-- View own bookings with status (pending / approved / rejected / cancelled)
-- Cancel pending or approved future bookings
-
-### Admin
-- Add / Edit / Delete spaces
-- Block maintenance windows (auto-rejects conflicting bookings)
-- View all bookings filterable by status, date, space
-- Approve or reject pending bookings
-- Auto-reject overlapping pending bookings when one is approved
+- **Visitor** — Browse spaces, search/filter by type & capacity, view availability calendar, pagination
+- **Member** — Register/Login (JWT), book a space, view/cancel own bookings
+- **Admin** — Manage spaces (CRUD), approve/reject bookings, block maintenance windows, auto-reject overlapping bookings
 
 ---
 
@@ -44,17 +34,25 @@ A full-stack co-working space booking system where members book desks/meeting ro
 | Database | MongoDB (Mongoose) |
 | Auth | JWT (access 15m + refresh 7d, rotation) |
 | Frontend | React, Axios |
-| Docs | Swagger UI (`/api/docs`) |
-| Email | Nodemailer stub (Ethereal preview URLs) |
-| Deploy | Render (backend) + Vercel (frontend) + MongoDB Atlas (DB) |
+| Docs | Swagger UI |
+| Email | Nodemailer (Ethereal stub) |
+| Deploy | Render + Vercel + MongoDB Atlas |
 
 ---
 
-## ⚡ Quick Start (Docker — one command)
+## ⚡ Quick Start (Docker — Recommended)
+
+> One command brings up **frontend + backend + MongoDB** — no manual setup needed.
+
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) installed
+
+### Run
 
 ```bash
-git clone <your-repo-url>
-cd cowork-space
+git clone https://github.com/archeedoshi12/Cowork-Space.git
+cd Cowork-Space
 docker-compose up --build
 ```
 
@@ -64,9 +62,12 @@ docker-compose up --build
 | Backend API | http://localhost:5000/api |
 | Swagger Docs | http://localhost:5000/api/docs |
 
-**Seeded credentials:**
-- Admin: `admin@cowork.com` / `admin123`
-- Member: `member@cowork.com` / `member123`
+> Seed data (admin + member + spaces) is loaded automatically on first run.
+
+To stop:
+```bash
+docker-compose down
+```
 
 ---
 
@@ -77,101 +78,43 @@ docker-compose up --build
 - MongoDB running locally
 
 ### Backend
-
 ```bash
 cd backend
-cp ../.env.example .env   # fill in your values
+cp ../.env.example .env
 npm install
-npm run seed              # seed admin + spaces
-npm start                 # runs on port 5000
+npm run seed
+npm start
 ```
 
 ### Frontend
-
 ```bash
 cd frontend
-cp .env.example .env      # set REACT_APP_API_URL
+cp .env.example .env   # set REACT_APP_API_URL=http://localhost:5000/api
 npm install
-npm start                 # runs on port 3000
+npm start
 ```
-
----
-
-## 🌐 Deployment Guide
-
-### 1. MongoDB Atlas (Database)
-
-1. Go to [mongodb.com/atlas](https://mongodb.com/atlas) → create free cluster
-2. **Database Access** → Add user with password
-3. **Network Access** → Allow `0.0.0.0/0`
-4. **Connect** → Copy connection string: `mongodb+srv://<user>:<pass>@cluster.mongodb.net/coworking`
-
----
-
-### 2. Backend → Render
-
-1. Go to [render.com](https://render.com) → **New Web Service**
-2. Connect your GitHub repo
-3. Set:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install`
-   - **Start Command:** `node src/server.js`
-4. Add environment variables:
-
-| Key | Value |
-|---|---|
-| `MONGO_URI` | Your Atlas connection string |
-| `JWT_SECRET` | Any long random string |
-| `JWT_REFRESH_SECRET` | Any different long random string |
-| `JWT_EXPIRES_IN` | `15m` |
-| `JWT_REFRESH_EXPIRES_IN` | `7d` |
-| `CLIENT_URL` | Your Vercel frontend URL |
-| `NODE_ENV` | `production` |
-
-5. After deploy, run seed: open Render shell → `node src/utils/seed.js`
-6. Copy your Render URL: `https://cowork-backend.onrender.com`
-
----
-
-### 3. Frontend → Vercel
-
-1. Go to [vercel.com](https://vercel.com) → **New Project** → import repo
-2. Set **Root Directory** to `frontend`
-3. Add environment variable:
-
-| Key | Value |
-|---|---|
-| `REACT_APP_API_URL` | `https://cowork-backend.onrender.com/api` |
-
-4. Deploy → copy your Vercel URL
-
-5. Go back to Render → update `CLIENT_URL` to your Vercel URL → redeploy
 
 ---
 
 ## 📁 Project Structure
 
 ```
-cowork-space/
 ├── backend/
 │   ├── src/
-│   │   ├── config/db.js
-│   │   ├── controllers/      # authController, bookingController, spaceController
-│   │   ├── middleware/        # auth, errorHandler, rateLimiter, validators
-│   │   ├── models/            # User, Space, Booking
-│   │   ├── routes/            # auth, spaces, bookings
-│   │   ├── utils/             # jwt, email, seed
+│   │   ├── config/        # DB connection
+│   │   ├── controllers/   # auth, booking, space
+│   │   ├── middleware/    # auth, errorHandler, rateLimiter, validators
+│   │   ├── models/        # User, Space, Booking
+│   │   ├── routes/        # auth, spaces, bookings
+│   │   ├── utils/         # jwt, email, seed
 │   │   └── server.js
-│   ├── docs/swagger.yaml
-│   └── package.json
+│   └── docs/swagger.yaml
 ├── frontend/
-│   ├── src/
-│   │   ├── api/               # axios instance + API calls
-│   │   ├── components/        # Navbar, SpaceCard, BookingModal, AvailabilityCalendar
-│   │   ├── context/           # AuthContext
-│   │   ├── pages/             # Home, Spaces, SpaceDetail, Dashboard, AdminDashboard
-│   │   └── App.js
-│   └── package.json
+│   └── src/
+│       ├── api/           # axios instance + API calls
+│       ├── components/    # Navbar, SpaceCard, BookingModal, AvailabilityCalendar
+│       ├── context/       # AuthContext
+│       └── pages/         # Home, Spaces, SpaceDetail, Dashboard, AdminDashboard
 ├── .env.example
 ├── docker-compose.yml
 └── README.md
@@ -179,43 +122,33 @@ cowork-space/
 
 ---
 
-## 📖 API Documentation
+## 🔑 Environment Variables
 
-Swagger UI available at: `http://localhost:5000/api/docs`
+See `.env.example` for all required variables.
 
-### Key Endpoints
+| Key | Description |
+|---|---|
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | Access token secret |
+| `JWT_REFRESH_SECRET` | Refresh token secret |
+| `CLIENT_URL` | Frontend URL (for CORS) |
+
+---
+
+## 📖 Key API Endpoints
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | POST | `/api/auth/register` | — | Register member |
 | POST | `/api/auth/login` | — | Login, get tokens |
 | POST | `/api/auth/refresh` | — | Refresh access token |
-| POST | `/api/auth/logout` | Bearer | Logout |
 | GET | `/api/spaces` | — | List spaces (search/filter/paginate) |
-| GET | `/api/spaces/:id` | — | Space details |
 | GET | `/api/spaces/:id/availability` | — | Hourly availability for date |
-| POST | `/api/spaces` | Admin | Create space |
-| PUT | `/api/spaces/:id` | Admin | Update space |
-| DELETE | `/api/spaces/:id` | Admin | Deactivate space |
 | POST | `/api/bookings` | Member | Create booking |
 | GET | `/api/bookings/my` | Member | My bookings |
 | PATCH | `/api/bookings/:id/cancel` | Member | Cancel booking |
 | GET | `/api/bookings` | Admin | All bookings |
 | PATCH | `/api/bookings/:id/approve` | Admin | Approve booking |
-| PATCH | `/api/bookings/:id/reject` | Admin | Reject booking |
 | POST | `/api/bookings/maintenance` | Admin | Block maintenance window |
 
----
-
-## 🔑 Environment Variables
-
-See [`.env.example`](.env.example) for all required variables.
-
----
-
-## 📧 Email Notifications (Stub)
-
-Email notifications fire on every booking status change (pending, approved, rejected, cancelled).
-
-- **Without SMTP config:** Uses [Ethereal](https://ethereal.email) — a fake SMTP service. Preview URLs are logged to the backend console.
-- **With real SMTP:** Set `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` in `.env` (supports Gmail, SendGrid, etc.)
+Full docs available at `/api/docs`.
