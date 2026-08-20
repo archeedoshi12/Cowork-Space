@@ -48,6 +48,34 @@ app.use('/api/bookings', bookingRoutes);
 
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'API is running', timestamp: new Date() }));
 
+app.post('/api/seed', async (req, res) => {
+  if (req.headers['x-seed-secret'] !== process.env.SEED_SECRET)
+    return res.status(403).json({ success: false, message: 'Forbidden' });
+  try {
+    const User = require('./models/User');
+    const Space = require('./models/Space');
+    const adminExists = await User.findOne({ email: 'admin@cowork.com' });
+    if (adminExists) return res.json({ success: true, message: 'Already seeded' });
+    await User.create([
+      { name: 'Admin User', email: 'admin@cowork.com', password: 'admin123', role: 'admin' },
+      { name: 'John Member', email: 'member@cowork.com', password: 'member123', role: 'member' },
+    ]);
+    await Space.insertMany([
+      { name: 'Hot Desk A1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet'], description: 'Open hot desk in main area' },
+      { name: 'Hot Desk A2', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet', 'Monitor'], description: 'Open hot desk with monitor' },
+      { name: 'Private Desk B1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Power Outlet', 'Locker'], description: 'Private desk with locker' },
+      { name: 'Meeting Room Alpha', type: 'meeting_room', capacity: 6, amenities: ['WiFi', 'Projector', 'Whiteboard', 'TV Screen'], description: 'Small meeting room for 6' },
+      { name: 'Meeting Room Beta', type: 'meeting_room', capacity: 12, amenities: ['WiFi', 'Projector', 'Whiteboard', 'Video Conferencing'], description: 'Large meeting room for 12' },
+      { name: 'Board Room', type: 'meeting_room', capacity: 20, amenities: ['WiFi', 'Dual Projectors', 'Whiteboard', 'Video Conferencing', 'Catering'], description: 'Executive board room' },
+      { name: 'Focus Pod 1', type: 'desk', capacity: 1, amenities: ['WiFi', 'Noise Cancellation', 'Power Outlet'], description: 'Quiet focus pod' },
+      { name: 'Collaboration Hub', type: 'meeting_room', capacity: 8, amenities: ['WiFi', 'Whiteboard', 'Standing Desks'], description: 'Open collaboration space' },
+    ]);
+    res.json({ success: true, message: 'Seeded successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
