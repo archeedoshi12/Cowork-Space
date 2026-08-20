@@ -15,6 +15,7 @@ const overlapFilter = (spaceId, date, startTime, endTime, excludeId = null) => {
 };
 
 const createBooking = async (req, res, next) => {
+  const session = await require('mongoose').startSession();
   try {
     const { spaceId, date, startTime, endTime, notes } = req.body;
 
@@ -22,20 +23,34 @@ const createBooking = async (req, res, next) => {
     if (!space || !space.isActive)
       return res.status(404).json({ success: false, message: 'Space not found' });
 
-    const overlap = await Booking.findOne(overlapFilter(spaceId, date, startTime, endTime));
-    if (overlap)
-      return res.status(409).json({ success: false, message: 'This time slot overlaps with an existing booking' });
+    let populated;
+    await session.withTransaction(async () => {
+      // overlap check + insert are atomic — concurrent requests can't both pass
+      const overlap = await Booking.findOne(overlapFilter(spaceId, date, startTime, endTime)).session(session);
+      if (overlap) {
+        const err = new Error('This time slot overlaps with an existing booking');
+        err.status = 409;
+        throw err;
+      }
 
-    const booking = await Booking.create({ space: spaceId, member: req.user._id, date, startTime, endTime, notes });
-    const populated = await booking.populate([
-      { path: 'space', select: 'name type capacity' },
-      { path: 'member', select: 'name email' },
-    ]);
+      const [booking] = await Booking.create(
+        [{ space: spaceId, member: req.user._id, date, startTime, endTime, notes }],
+        { session }
+      );
+      populated = await booking.populate([
+        { path: 'space', select: 'name type capacity' },
+        { path: 'member', select: 'name email' },
+      ]);
+    });
 
     bookingStatusEmail(req.user.email, req.user.name, 'pending', space.name, date, startTime, endTime);
     res.status(201).json({ success: true, data: populated });
   } catch (err) {
+    if (err.status === 409)
+      return res.status(409).json({ success: false, message: err.message });
     next(err);
+  } finally {
+    session.endSession();
   }
 };
 
