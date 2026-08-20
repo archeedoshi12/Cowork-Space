@@ -9,8 +9,6 @@ const userSchema = new mongoose.Schema({
   refreshTokens: [{ token: String, expiresAt: Date }],
 }, { timestamps: true });
 
-userSchema.index({ email: 1 });
-
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
