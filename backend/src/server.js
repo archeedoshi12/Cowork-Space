@@ -41,6 +41,15 @@ try {
   console.log('Swagger docs not loaded:', e.message);
 }
 
+// Root
+app.get('/', (req, res) => res.json({
+  success: true,
+  message: 'CoWork Space API',
+  version: '1.0.0',
+  docs: '/api/docs',
+  health: '/api/health',
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/spaces', spaceRoutes);
